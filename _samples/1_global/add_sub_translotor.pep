@@ -1,8 +1,10 @@
-                BR program
-UNIV:          .BLOCK 2
-variable:       .BLOCK 2
+; Branching to top level (tl) instructions
+                BR tl
+; Allocating Global (static) memory
 value:          .BLOCK 2
 result:         .BLOCK 2
+_UNIV:          .BLOCK 2
+variable:       .BLOCK 2
 ; Top Level instructions
 tl:             NOP1
                 DECI value,d
