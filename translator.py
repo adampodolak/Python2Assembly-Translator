@@ -27,13 +27,13 @@ def process(input_file, root_node):
     print(f'; Translating {input_file}')
     extractor = GlobalVariableExtraction()
     extractor.visit(root_node)
-    memory_alloc = StaticMemoryAllocation(extractor.results)
-    print('; Branching to top level (tl) instructions')
-    print('\t\tBR tl')
-    memory_alloc.generate()
     top_level = TopLevelProgram('tl')
     top_level.visit(root_node)
-    ep = EntryPoint(top_level.finalize())
+    memory_alloc = StaticMemoryAllocation(extractor.results, top_level.constantValues)
+    print('; Branching to top level (tl) instructions')
+    print('\t\tBR tl')
+    avoidSL = memory_alloc.generate()
+    ep = EntryPoint(top_level.finalize(), avoidSL)
     ep.generate() 
 
 if __name__ == '__main__':

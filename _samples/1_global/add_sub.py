@@ -1,6 +1,6 @@
-value = int(input())
+valueasdawf = int(input())
 _UNIV = 42
-result = value + _UNIV
+result = valueasdawf + _UNIV
 variable = 3
 result = result - variable
 result = result - 1

@@ -8,11 +8,15 @@ class GlobalVariableExtraction(ast.NodeVisitor):
     def __init__(self) -> None:
         super().__init__()
         self.results = set()
+        self.assignAtInitialization = []
 
     def visit_Assign(self, node):
         if len(node.targets) != 1:
             raise ValueError("Only unary assignments are supported")
-        self.results.add(node.targets[0].id)
+        if len(node.targets[0].id)<=8:
+            self.results.add(node.targets[0].id)
+        else:
+            self.results.add(node.targets[0].id[:8])  
 
 
     def visit_FunctionDef(self, node):

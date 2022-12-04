@@ -8,10 +8,13 @@ class TopLevelProgram(ast.NodeVisitor):
     def __init__(self, entry_point) -> None:
         super().__init__()
         self.__instructions = list()
-        self.__record_instruction('NOP1', label=entry_point)
+        self.__record_instruction('NOP1', label=entry_point) #label.EQUATE entry_point
         self.__should_save = True
         self.__current_variable = None
         self.__elem_id = 0
+        self.constantValues = []
+        self.temp= None
+        self.store = True
 
     def finalize(self):
         self.__instructions.append((None, '.END'))
@@ -23,17 +26,30 @@ class TopLevelProgram(ast.NodeVisitor):
 
     def visit_Assign(self, node):
         # remembering the name of the target
-        self.__current_variable = node.targets[0].id
+        if len(node.targets[0].id)<=8:
+            self.__current_variable = node.targets[0].id
+        else:
+            self.__current_variable = node.targets[0].id[:8]
         # visiting the left part, now knowing where to store the result
         self.visit(node.value)
         if self.__should_save:
-            self.__record_instruction(f'STWA {self.__current_variable},d')
+            if self.store: 
+                self.__record_instruction(f'STWA {self.__current_variable},d')
+            self.store = True
         else:
             self.__should_save = True
         self.__current_variable = None
 
     def visit_Constant(self, node):
-        self.__record_instruction(f'LDWA {node.value},i')
+        passThrough = True
+        for i in self.constantValues:
+            if i[0]==self.__current_variable:
+                passThrough = False
+                self.__record_instruction(f'LDWA {node.value},i')
+                break
+        if passThrough:
+            self.constantValues.append([self.__current_variable, node.value])
+            self.store = False
     
     def visit_Name(self, node):
         self.__record_instruction(f'LDWA {node.id},d')
@@ -105,6 +121,8 @@ class TopLevelProgram(ast.NodeVisitor):
     def __access_memory(self, node, instruction, label = None):
         if isinstance(node, ast.Constant):
             self.__record_instruction(f'{instruction} {node.value},i', label)
+        elif node.id[0] == '_' and node.id.strip('_').isupper():
+                self.__record_instruction(f'{instruction} {node.id},i', label)
         else:
             self.__record_instruction(f'{instruction} {node.id},d', label)
 
