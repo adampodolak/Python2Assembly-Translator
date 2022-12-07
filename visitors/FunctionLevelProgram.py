@@ -1,9 +1,8 @@
 import ast
-from visitors.FunctionLevelProgram import FunctionLevelProgram
 
 LabeledInstruction = tuple[str, str]
 
-class TopLevelProgram(ast.NodeVisitor):
+class FunctionLevelProgram(ast.NodeVisitor):
     """We supports assignments and input/print calls"""
     
     def __init__(self, entry_point) -> None:
@@ -14,16 +13,13 @@ class TopLevelProgram(ast.NodeVisitor):
         self.__current_variable = None
         self.__elem_id = 0
         self.constantValues = []
-        self.functionInstructions = []
+        self.tempFunctionNode = [] 
+        self.addFunctionLater = []
         self.store = True
         
 
     def finalize(self):
-        for eachFunction in self.functionInstructions:
-            for eachInstruction in eachFunction:
-                self.__instructions.append(eachInstruction)
-
-        self.__instructions.append((None, '.END'))
+        print(self.__instructions)
         return self.__instructions
 
     ####
@@ -83,6 +79,7 @@ class TopLevelProgram(ast.NodeVisitor):
                 self.__record_instruction(f'DECO {node.args[0].id},d')
             case _:
                 pass
+            
     ####
     ## Handling While loops (only variable OP variable)
     ####
@@ -114,10 +111,9 @@ class TopLevelProgram(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node):
         """We do not visit function definitions, they are not top level"""
-        starter = FunctionLevelProgram(node.name)
-        starter.visit(node)
-        self.functionInstructions.append(starter.finalize())
-
+        for contents in node.body:
+            self.visit(contents)
+        pass
     ####
     ## Helper functions to 
     ####

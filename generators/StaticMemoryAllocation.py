@@ -25,7 +25,7 @@ class StaticMemoryAllocation():
                         break
             if keepGoing:
                 print(f'{str(n+":"):<9}\t.BLOCK 2') # reserving memory
-                                        #change ".BLOCK 2" into ".WORD n?"
+                                        
             keepGoing = True
         return avoidSL
 
