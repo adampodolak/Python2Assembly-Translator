@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ; Translating _samples/4_function_calls/call_void.py
 ; Branching to top level (tl) instructions
 		BR tl
@@ -18,4 +19,36 @@ tl:      	NOP1
 		SUBSP 0,i
 		CALL my_func
 		LDWA 0,s
+=======
+; Translating _samples/3_conditionals/test.py
+; Branching to top level (tl) instructions
+		BR tl
+; Allocating Global (static) memory
+n:       	.BLOCK 2
+result:  	.WORD 0
+; Top Level instructions
+tl:      	NOP1
+		DECI n,d
+cond_0:  	LDWA n,d
+		CPWA 0,i
+		BRNE cond_1
+if_0:    	NOP1
+		LDWA 0,i
+		STWA result,d
+		BR end_if_0
+else_0:  	NOP1
+cond_1:  	LDWA n,d
+		CPWA 1,i
+		BRNE else_1
+if_1:    	NOP1
+		LDWA 1,i
+		STWA result,d
+		BR end_if_1
+else_1:  	NOP1
+		LDWA 2,i
+		STWA result,d
+end_if_1:	NOP1
+end_if_0:	NOP1
+		DECO result,d
+>>>>>>> a970e7d3f28e357df6b5c680a6536992dbbf3705
 		.END

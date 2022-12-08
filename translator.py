@@ -25,7 +25,7 @@ def process_cli():
 
 def process(input_file, root_node):
     print(f'; Translating {input_file}')
-    extractor = GlobalVariableExtraction()
+    extractor = GlobalVariableExtraction() 
     extractor.visit(root_node)
     top_level = TopLevelProgram('tl')
     top_level.visit(root_node)
