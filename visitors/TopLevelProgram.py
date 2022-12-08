@@ -14,17 +14,29 @@ class TopLevelProgram(ast.NodeVisitor):
         self.__current_variable = None
         self.__elem_id = 0
         self.constantValues = []
+        self.functionParameters = []
         self.functionInstructions = []
+        self.numOfArgs = 0
         self.store = True
+        self.finalInstructions = list()
         
 
     def finalize(self):
-        for eachFunction in self.functionInstructions:
-            for eachInstruction in eachFunction:
-                self.__instructions.append(eachInstruction)
+
+        if self.numOfArgs != 0:
+            self.__record_instruction('ADDSP '+ str(self.numOfArgs*2) + ',i')
 
         self.__instructions.append((None, '.END'))
-        return self.__instructions
+        for eachFunction in self.functionInstructions:
+            self.finalInstructions.append(eachFunction[-1])
+            for eachInstruction in eachFunction:
+                self.finalInstructions.append(eachInstruction)
+            self.finalInstructions.pop()
+        
+        for eachInstruction in self.__instructions:
+            self.finalInstructions.append(eachInstruction)
+        #print(self.__instructions)
+        return self.finalInstructions
 
     ####
     ## Handling Assignments (variable = ...)
@@ -41,6 +53,7 @@ class TopLevelProgram(ast.NodeVisitor):
         if self.__should_save:
             if self.store: 
                 self.__record_instruction(f'STWA {self.__current_variable},d')
+
             self.store = True
         else:
             self.__should_save = True
@@ -82,6 +95,15 @@ class TopLevelProgram(ast.NodeVisitor):
                 # We are only supporting integers for now
                 self.__record_instruction(f'DECO {node.args[0].id},d')
             case _:
+                count = 0
+                for arguement in node.args:
+                    self.__record_instruction(f'LDWA {arguement.id},d')
+                    self.__record_instruction(f'STWA {str(count)},s')
+                    count +=2
+    
+                self.__record_instruction(f'CALL {node.func.id}')
+                self.__record_instruction(f'LDWA {str(count)},s')
+
                 pass
     ####
     ## Handling While loops (only variable OP variable)
@@ -114,9 +136,30 @@ class TopLevelProgram(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node):
         """We do not visit function definitions, they are not top level"""
-        starter = FunctionLevelProgram(node.name)
+        #check for a return statement
+        existsReturnStatement = False
+        if isinstance(node.body[-1], ast.Return):
+            self.numOfArgs +=1
+            existsReturnStatement = True
+
+
+        self.numOfArgs += len(node.args.args)
+        self.__record_instruction('SUBSP '+ str(self.numOfArgs*2) + ',i')
+        starter = FunctionLevelProgram(self.numOfArgs,node)
         starter.visit(node)
         self.functionInstructions.append(starter.finalize())
+
+        count = 0
+        for variable in starter.allocateMemory:
+            self.functionParameters.append((f'm{variable}',count))
+            count +=2
+        count +=2
+        for arguements in node.args.args:
+            self.functionParameters.append((f'm{arguements.arg}', count))
+            count +=2
+        if existsReturnStatement:
+            self.functionParameters.append((f'm{node.body[-1].value.id}', count))
+
 
     ####
     ## Helper functions to 

@@ -1,9 +1,10 @@
 
 class StaticMemoryAllocation():
 
-    def __init__(self, global_vars: dict(), constantValues) -> None:
+    def __init__(self, global_vars: dict(), constantValues, functionParameters) -> None:
         self.__global_vars = global_vars
         self.constantValues = constantValues
+        self.functionParameters = functionParameters
 
     def generate(self):
         keepGoing = True
@@ -27,5 +28,8 @@ class StaticMemoryAllocation():
                 print(f'{str(n+":"):<9}\t.BLOCK 2') # reserving memory
                                         
             keepGoing = True
+
+        for i in self.functionParameters:
+            print(f'{str(i[0]+":"):<9}\t.EQUATE ' + str(i[1]))
         return avoidSL
 

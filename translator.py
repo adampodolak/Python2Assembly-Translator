@@ -29,7 +29,7 @@ def process(input_file, root_node):
     extractor.visit(root_node)
     top_level = TopLevelProgram('tl')
     top_level.visit(root_node)
-    memory_alloc = StaticMemoryAllocation(extractor.results, top_level.constantValues)
+    memory_alloc = StaticMemoryAllocation(extractor.results, top_level.constantValues, top_level.functionParameters)
     print('; Branching to top level (tl) instructions')
     print('\t\tBR tl')
     avoidSL = memory_alloc.generate()

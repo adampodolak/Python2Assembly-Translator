@@ -5,21 +5,45 @@ LabeledInstruction = tuple[str, str]
 class FunctionLevelProgram(ast.NodeVisitor):
     """We supports assignments and input/print calls"""
     
-    def __init__(self, entry_point) -> None:
+    def __init__(self, numOfArgs, node) -> None:
         super().__init__()
         self.__instructions = list()
-        self.__record_instruction('NOP1', label=entry_point) #label.EQUATE entry_point
         self.__should_save = True
         self.__current_variable = None
         self.__elem_id = 0
+        self.root = node
+        self.args = node.args.args
+        self.numOfArgs = numOfArgs
+        self.localVariables = set()
         self.constantValues = []
-        self.tempFunctionNode = [] 
-        self.addFunctionLater = []
+        self.allocateMemory = []
+
         self.store = True
         
 
     def finalize(self):
-        print(self.__instructions)
+        for arguement in self.args:
+            self.localVariables.add(arguement.arg)
+        if len(self.localVariables) != self.numOfArgs:
+            self.__instructions.append((None, 'ADDSP '+ str((len(self.localVariables)-self.numOfArgs)*2) + ',i'))
+            self.__instructions.append((None,'RET'))
+            self.__instructions.append((self.root.name, 'SUBSP '+ str((len(self.localVariables)-self.numOfArgs)*2) + ',i'))
+            for variable in self.localVariables:
+                variableMatch = False
+                for Param in self.args:
+                    if variable == Param.arg:
+                        variableMatch = True
+                        break
+                if not variableMatch:
+                    self.allocateMemory.append(variable)
+
+            
+        else:
+            self.__instructions.append((None,'RET'))
+            self.__instructions.append((self.root.name, 'NOP1'))
+        
+        
+        
         return self.__instructions
 
     ####
@@ -36,7 +60,8 @@ class FunctionLevelProgram(ast.NodeVisitor):
         self.visit(node.value)
         if self.__should_save:
             if self.store: 
-                self.__record_instruction(f'STWA {self.__current_variable},d')
+                self.__record_instruction(f'STWA m{self.__current_variable},s')
+                self.localVariables.add(self.__current_variable)
             self.store = True
         else:
             self.__should_save = True
@@ -54,7 +79,10 @@ class FunctionLevelProgram(ast.NodeVisitor):
             self.store = False
     
     def visit_Name(self, node):
-        self.__record_instruction(f'LDWA {node.id},d')
+        if not isinstance(self.root.body[-1], ast.Return):
+
+            self.__record_instruction(f'LDWA m{node.id},s')
+            self.localVariables.add(node.id)
 
     def visit_BinOp(self, node):
         self.__access_memory(node.left, 'LDWA')
@@ -72,11 +100,13 @@ class FunctionLevelProgram(ast.NodeVisitor):
                 self.visit(node.args[0])
             case 'input':
                 # We are only supporting integers for now
-                self.__record_instruction(f'DECI {self.__current_variable},d')
+                self.__record_instruction(f'DECI m{self.__current_variable},s')
                 self.__should_save = False # DECI already save the value in memory
+                self.localVariables.add(self.__current_variable)
+
             case 'print':
                 # We are only supporting integers for now
-                self.__record_instruction(f'DECO {node.args[0].id},d')
+                self.__record_instruction(f'DECO m{node.args[0].id},s')
             case _:
                 pass
             
@@ -127,7 +157,7 @@ class FunctionLevelProgram(ast.NodeVisitor):
         elif node.id[0] == '_' and node.id.strip('_').isupper():
                 self.__record_instruction(f'{instruction} {node.id},i', label)
         else:
-            self.__record_instruction(f'{instruction} {node.id},d', label)
+            self.__record_instruction(f'{instruction} m{node.id},s', label)
 
     def __identify(self):
         result = self.__elem_id
