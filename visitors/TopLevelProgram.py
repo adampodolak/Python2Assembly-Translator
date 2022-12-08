@@ -15,6 +15,8 @@ class TopLevelProgram(ast.NodeVisitor):
         self.constantValues = []
         self.temp= None
         self.store = True
+        self.__current_while_id = None
+        self.__is_elseif_statement = False
 
     def finalize(self):
         self.__instructions.append((None, '.END'))
@@ -84,11 +86,14 @@ class TopLevelProgram(ast.NodeVisitor):
 
     def visit_While(self, node):
         loop_id = self.__identify()
+        self.__current_while_id = loop_id
         inverted = {
             ast.Lt:  'BRGE', # '<'  in the code means we branch if '>=' 
             ast.LtE: 'BRGT', # '<=' in the code means we branch if '>' 
             ast.Gt:  'BRLE', # '>'  in the code means we branch if '<='
             ast.GtE: 'BRLT', # '>=' in the code means we branch if '<'
+            ast.NotEq: 'BREQ', # '!=' in the code means we branch if '=='
+            ast.Eq: 'BRNE' # '==' in the code means we branch if '!='
         }
         # left part can only be a variable
         self.__access_memory(node.test.left, 'LDWA', label = f'test_{loop_id}')
@@ -98,11 +103,60 @@ class TopLevelProgram(ast.NodeVisitor):
         self.__record_instruction(f'{inverted[type(node.test.ops[0])]} end_l_{loop_id}')
         # Visiting the body of the loop
         for contents in node.body:
+            # could implement a conditional here to check if its an if statement
+            # if content is equal to ast.If then visit_if(), generate_else() etc.
             self.visit(contents)
+            
         self.__record_instruction(f'BR test_{loop_id}')
         # Sentinel marker for the end of the loop
         self.__record_instruction(f'NOP1', label = f'end_l_{loop_id}')
 
+    def visit_If(self, node):
+
+        conditional_id = self.__identify()
+        inverted = {
+            ast.Lt:  'BRGE', # '<'  in the code means we branch if '>=' 
+            ast.LtE: 'BRGT', # '<=' in the code means we branch if '>' 
+            ast.Gt:  'BRLE', # '>'  in the code means we branch if '<='
+            ast.GtE: 'BRLT', # '>=' in the code means we branch if '<'
+            ast.NotEq: 'BREQ', # '!=' in the code means we branch if '=='
+            ast.Eq: 'BRNE' # '==' in the code means we branch if '!='
+        }
+
+        self.__access_memory(node.test.left, 'LDWA', label = f'cond_{conditional_id}')
+        self.__access_memory(node.test.comparators[0], 'CPWA')
+
+        elseif_exists = False
+
+        for n in node.orelse:
+            if isinstance(n, ast.If):
+                elseif_exists = True
+
+        if elseif_exists:
+            self.__record_instruction(f'{inverted[type(node.test.ops[0])]} cond_{conditional_id + 1}')
+        else:
+            self.__record_instruction(f'{inverted[type(node.test.ops[0])]} else_{conditional_id}')
+
+        elseif_exists = False
+
+        self.__record_instruction('NOP1', label = f'if_{conditional_id}')
+        
+        for contents in node.body:
+            self.visit(contents)
+            if self.__current_while_id != None:
+                self.__record_instruction(f'BR test_{self.__current_while_id}')
+            
+        self.__record_instruction(f'BR end_if_{conditional_id}')
+        self.__record_instruction('NOP1', label = f'else_{conditional_id}')
+            
+        for contents in node.orelse:
+            self.visit(contents)
+        
+        self.__record_instruction(f'NOP1', label=f'end_if_{conditional_id}')
+
+
+    
+    
     ####
     ## Not handling function calls 
     ####

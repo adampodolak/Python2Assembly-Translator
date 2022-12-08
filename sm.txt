@@ -1,0 +1,38 @@
+; Translating _samples/3_conditionals/smart_mult.py
+; Branching to top level (tl) instructions
+		BR tl
+; Allocating Global (static) memory
+b:       	.BLOCK 2
+result:  	.WORD 0
+tmp:     	.BLOCK 2
+a:       	.BLOCK 2
+; Top Level instructions
+tl:      	NOP1
+		DECI a,d
+		DECI b,d
+cond_0:  	LDWA a,d
+		CPWA b,d
+		BRGE else_0
+if_0:    	NOP1
+		LDWA b,d
+		STWA tmp,d
+		LDWA a,d
+		STWA b,d
+		LDWA tmp,d
+		STWA a,d
+		BR end_if_0
+else_0:  	NOP1
+end_if_0:	NOP1
+test_1:  	LDWA b,d
+		CPWA 0,i
+		BRLE end_l_1
+		LDWA result,d
+		ADDA a,d
+		STWA result,d
+		LDWA b,d
+		SUBA 1,i
+		STWA b,d
+		BR test_1
+end_l_1: 	NOP1
+		DECO result,d
+		.END

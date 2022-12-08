@@ -1,0 +1,56 @@
+; Translating _samples/3_conditionals/factorial.py
+; Branching to top level (tl) instructions
+		BR tl
+; Allocating Global (static) memory
+mult_r:  	.WORD 0
+a:       	.BLOCK 2
+i:       	.WORD 1
+result:  	.WORD 0
+b:       	.BLOCK 2
+n:       	.BLOCK 2
+; Top Level instructions
+tl:      	NOP1
+		DECI n,d
+cond_0:  	LDWA n,d
+		CPWA 0,i
+		BRNE else_0
+if_0:    	NOP1
+		LDWA 1,i
+		STWA result,d
+else_0:  	NOP1
+cond_1:  	LDWA n,d
+		CPWA 1,i
+		BRNE else_1
+if_1:    	NOP1
+		LDWA 1,i
+		STWA result,d
+else_1:  	NOP1
+		LDWA 1,i
+		STWA result,d
+test_2:  	LDWA i,d
+		CPWA n,d
+		BRGT end_l_2
+		LDWA result,d
+		STWA a,d
+		LDWA i,d
+		STWA b,d
+test_3:  	LDWA b,d
+		CPWA 0,i
+		BRLE end_l_3
+		LDWA mult_r,d
+		ADDA a,d
+		STWA mult_r,d
+		LDWA b,d
+		SUBA 1,i
+		STWA b,d
+		BR test_3
+end_l_3: 	NOP1
+		LDWA mult_r,d
+		STWA result,d
+		LDWA i,d
+		ADDA 1,i
+		STWA i,d
+		BR test_2
+end_l_2: 	NOP1
+		DECO result,d
+		.END
