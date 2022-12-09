@@ -1,0 +1,25 @@
+; Translating _samples/4_function_calls/call_param.py
+; Branching to top level (tl) instructions
+		BR tl
+; Allocating Global (static) memory
+x:       	.BLOCK 2
+_UNIV:   	.EQUATE 42
+mresult: 	.EQUATE 0
+mvalue:  	.EQUATE 4
+; Top Level instructions
+my_func: 	SUBSP 2,i
+		LDWA mvalue,s
+		ADDA _UNIV,i
+		STWA mresult,s
+		DECO mresult,s
+		ADDSP 2,i
+		RET
+tl:      	NOP1
+		SUBSP 2,i
+		DECI x,d
+		LDWA x,d
+		STWA 0,s
+		CALL my_func
+		LDWA 2,s
+		ADDSP 2,i
+		.END
