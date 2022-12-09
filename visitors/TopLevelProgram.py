@@ -20,7 +20,6 @@ class TopLevelProgram(ast.NodeVisitor):
         self.store = True
         self.finalInstructions = list()
         self.__current_while_id = None
-        self.__is_elseif_statement = False
 
     def finalize(self):
 
@@ -45,7 +44,7 @@ class TopLevelProgram(ast.NodeVisitor):
 
     def visit_Assign(self, node):
         # remembering the name of the target
-        if len(node.targets[0].id)<=8:
+        if len(node.targets[0].id) <= 8:
             self.__current_variable = node.targets[0].id
         else:
             self.__current_variable = node.targets[0].id[:8]
@@ -121,24 +120,22 @@ class TopLevelProgram(ast.NodeVisitor):
             ast.NotEq: 'BREQ', # '!=' in the code means we branch if '=='
             ast.Eq: 'BRNE' # '==' in the code means we branch if '!='
         }
-        # left part can only be a variable
+
         self.__access_memory(node.test.left, 'LDWA', label = f'test_{loop_id}')
-        # right part can only be a variable
+
         self.__access_memory(node.test.comparators[0], 'CPWA')
-        # Branching is condition is not true (thus, inverted)
+
         self.__record_instruction(f'{inverted[type(node.test.ops[0])]} end_l_{loop_id}')
-        # Visiting the body of the loop
+
         for contents in node.body:
-            # could implement a conditional here to check if its an if statement
-            # if content is equal to ast.If then visit_if(), generate_else() etc.
             self.visit(contents)
             
         self.__record_instruction(f'BR test_{loop_id}')
         # Sentinel marker for the end of the loop
         self.__record_instruction(f'NOP1', label = f'end_l_{loop_id}')
-
+    
     def visit_If(self, node):
-
+        
         conditional_id = self.__identify()
         inverted = {
             ast.Lt:  'BRGE', # '<'  in the code means we branch if '>=' 
@@ -179,8 +176,6 @@ class TopLevelProgram(ast.NodeVisitor):
             self.visit(contents)
         
         self.__record_instruction(f'NOP1', label=f'end_if_{conditional_id}')
-
-
     
     
     ####
