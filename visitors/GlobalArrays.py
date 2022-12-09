@@ -3,7 +3,7 @@ import ast
 
 class GlobalArrayTranslator(ast.NodeVisitor):
 
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
         self.__instructions = list()
         self.__array_index_exists = False
